@@ -1,0 +1,10 @@
+# Exclude the project virtual environment from image builds
+.venv
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.vscode/
+.github/
+.git/
+notebooks/
+__pycache__/
