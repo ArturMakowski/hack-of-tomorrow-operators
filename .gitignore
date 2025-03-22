@@ -183,3 +183,4 @@ frontend/dist
 frontend/build
 frontend/coverage
 frontend/dist
+frontend/.next
