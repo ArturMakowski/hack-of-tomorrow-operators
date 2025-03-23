@@ -1,7 +1,5 @@
 # src/agents/energy_trading_agent.py
 
-import numpy as np
-
 
 class EnergyTradingAgent:
     def __init__(self):
@@ -10,7 +8,6 @@ class EnergyTradingAgent:
         self.price_history = []
         self.min_price = 0.2
         self.max_price = 0.8
-        self.p2p_trades = []  # Track P2P trades
 
     def calculate_optimal_p2p_price(
         self, grid_costs, hour, community_balance, net_energy, storage_level_percentage
@@ -34,9 +31,9 @@ class EnergyTradingAgent:
         # Adjust based on net energy
         energy_factor = 1.0
         if net_energy > 0:  # Surplus
-            energy_factor = 0.95  # Lower prices to encourage consumption
+            energy_factor = 0.85  # Lower prices to encourage consumption
         elif net_energy < 0:  # Deficit
-            energy_factor = 1.05  # Higher prices to encourage production
+            energy_factor = 1.25  # Higher prices to encourage production
 
         # Adjust based on storage levels
         storage_factor = 1.0
@@ -64,15 +61,9 @@ class EnergyTradingAgent:
         return p2p_price
 
     def decide_energy_allocation(
-        self,
-        net_energy,
-        storage_capacity,
-        grid_costs,
-        hour,
-        forecasts=None,
-        community_members=None,
+        self, net_energy, storage_capacity, grid_costs, hour, forecasts=None
     ):
-        """Decide how to allocate energy between P2P trading, storage, and grid."""
+        """Decide how to allocate energy between storage, grid, and community."""
         # Get current grid prices
         current_purchase = grid_costs[hour % len(grid_costs)]["purchase"]
         current_sale = grid_costs[hour % len(grid_costs)]["sale"]
@@ -105,77 +96,48 @@ class EnergyTradingAgent:
                     )
                     future_energy_balance += forecast_net
 
-        # Check for P2P trading opportunities if community members are provided
-        p2p_potential = 0
-        if community_members:
-            # Calculate potential P2P trading volume
-            for member in community_members:
-                member_net = member.get("production", 0) - member.get("consumption", 0)
-                # If this member has opposite energy balance to us, we can trade
-                if member_net * net_energy < 0:  # Opposite signs
-                    p2p_potential += min(abs(member_net), abs(net_energy))
-
         # Handle surplus energy
         if net_energy > 0:
-            remaining_energy = net_energy
-
-            # First allocate to P2P trading
-            if p2p_potential > 0:
-                p2p_amount = min(remaining_energy, p2p_potential)
-                allocation["p2p_trade"] = p2p_amount
-                remaining_energy -= p2p_amount
-
-                # Record the P2P trade
-                self.p2p_trades.append(
-                    {"hour": hour, "amount": p2p_amount, "type": "sell"}
-                )
-
             # If storage is a better option than selling to grid
+            # FIX: Check if future_prices is not empty before using max()
             if (
-                remaining_energy > 0
+                future_prices
                 and current_sale < max(future_prices, key=lambda x: x[0])[0] * 0.9
                 and storage_capacity > 0
             ):
                 # Store as much as possible
-                allocation["to_storage"] = min(remaining_energy, storage_capacity)
-                remaining_energy -= allocation["to_storage"]
+                allocation["to_storage"] = min(net_energy, storage_capacity)
+                remaining = net_energy - allocation["to_storage"]
 
-            # Sell remaining to grid only as last resort
-            if remaining_energy > 0:
-                allocation["to_grid"] = remaining_energy
+                # Sell remaining to grid
+                if remaining > 0:
+                    allocation["to_grid"] = remaining
+            else:
+                # Sell directly to grid if price is good
+                allocation["to_grid"] = net_energy
 
         # Handle energy deficit
         elif net_energy < 0:
             deficit = -net_energy
-            remaining_deficit = deficit
-
-            # First try to get energy from P2P trading
-            if p2p_potential > 0:
-                p2p_amount = min(remaining_deficit, p2p_potential)
-                allocation["p2p_trade"] = -p2p_amount  # Negative indicates buying
-                remaining_deficit -= p2p_amount
-
-                # Record the P2P trade
-                self.p2p_trades.append(
-                    {"hour": hour, "amount": p2p_amount, "type": "buy"}
-                )
 
             # If future prices will be higher, use storage now
-            if remaining_deficit > 0:
-                avg_future_purchase = (
-                    sum(p[0] for p in future_prices) / len(future_prices)
-                    if future_prices
-                    else current_purchase
-                )
-                if current_purchase > avg_future_purchase * 1.1:
-                    # Use storage first
-                    from_storage = min(remaining_deficit, storage_capacity)
-                    allocation["from_storage"] = from_storage
-                    remaining_deficit -= from_storage
+            avg_future_purchase = (
+                sum(p[0] for p in future_prices) / len(future_prices)
+                if future_prices
+                else current_purchase
+            )
+            if current_purchase > avg_future_purchase * 1.1:
+                # Use storage first
+                from_storage = min(deficit, storage_capacity)
+                allocation["from_storage"] = from_storage
+                remaining_deficit = deficit - from_storage
 
-            # Buy remaining from grid only as last resort
-            if remaining_deficit > 0:
-                allocation["from_grid"] = remaining_deficit
+                # Buy remaining from grid
+                if remaining_deficit > 0:
+                    allocation["from_grid"] = remaining_deficit
+            else:
+                # Buy directly from grid if price is good
+                allocation["from_grid"] = deficit
 
         # Record the trade
         self.trade_history.append(
