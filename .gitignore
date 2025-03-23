@@ -178,6 +178,7 @@ dist
 
 
 # Frontend
+!frontend/lib
 frontend/node_modules
 frontend/dist
 frontend/build
