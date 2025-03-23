@@ -1,0 +1,28 @@
+{
+  "grid_costs": [
+    { "Hour": "00:00 - 01:00", "Purchase": 0.40, "Sale": 0.20 },
+    { "Hour": "01:00 - 02:00", "Purchase": 0.38, "Sale": 0.18 },
+    { "Hour": "02:00 - 03:00", "Purchase": 0.36, "Sale": 0.18 },
+    { "Hour": "03:00 - 04:00", "Purchase": 0.34, "Sale": 0.17 },
+    { "Hour": "04:00 - 05:00", "Purchase": 0.35, "Sale": 0.17 },
+    { "Hour": "05:00 - 06:00", "Purchase": 0.38, "Sale": 0.18 },
+    { "Hour": "06:00 - 07:00", "Purchase": 0.45, "Sale": 0.22 },
+    { "Hour": "07:00 - 08:00", "Purchase": 0.60, "Sale": 0.30 },
+    { "Hour": "08:00 - 09:00", "Purchase": 0.75, "Sale": 0.35 },
+    { "Hour": "09:00 - 10:00", "Purchase": 0.70, "Sale": 0.40 },
+    { "Hour": "10:00 - 11:00", "Purchase": 0.55, "Sale": 0.42 },
+    { "Hour": "11:00 - 12:00", "Purchase": 0.50, "Sale": 0.45 },
+    { "Hour": "12:00 - 13:00", "Purchase": 0.48, "Sale": 0.46 },
+    { "Hour": "13:00 - 14:00", "Purchase": 0.46, "Sale": 0.45 },
+    { "Hour": "14:00 - 15:00", "Purchase": 0.47, "Sale": 0.44 },
+    { "Hour": "15:00 - 16:00", "Purchase": 0.52, "Sale": 0.40 },
+    { "Hour": "16:00 - 17:00", "Purchase": 0.60, "Sale": 0.38 },
+    { "Hour": "17:00 - 18:00", "Purchase": 0.70, "Sale": 0.35 },
+    { "Hour": "18:00 - 19:00", "Purchase": 0.80, "Sale": 0.30 },
+    { "Hour": "19:00 - 20:00", "Purchase": 0.85, "Sale": 0.28 },
+    { "Hour": "20:00 - 21:00", "Purchase": 0.75, "Sale": 0.25 },
+    { "Hour": "21:00 - 22:00", "Purchase": 0.60, "Sale": 0.22 },
+    { "Hour": "22:00 - 23:00", "Purchase": 0.50, "Sale": 0.20 },
+    { "Hour": "23:00 - 00:00", "Purchase": 0.45, "Sale": 0.19 }
+  ]
+}

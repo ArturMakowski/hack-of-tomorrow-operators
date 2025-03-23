@@ -10,24 +10,21 @@ import csv
 from datetime import datetime
 from pathlib import Path
 
-from dotenv import load_dotenv, find_dotenv
 
-load_dotenv(find_dotenv())
+import json
 
 
 def load_grid_costs(filepath):
-    grid_costs = []
-    with open(filepath, "r") as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            grid_costs.append(
-                {
-                    "hour": row["Hour"],
-                    "purchase": float(row["Purchase"].replace(",", ".")),
-                    "sale": float(row["Sale"].replace(",", ".")),
-                }
-            )
-    return grid_costs
+    with open(filepath, "r") as f:
+        data = json.load(f)
+    return [
+        {
+            "hour": entry["Hour"],
+            "purchase": float(entry["Purchase"]),
+            "sale": float(entry["Sale"]),
+        }
+        for entry in data["grid_costs"]
+    ]
 
 
 if __name__ == "__main__":
@@ -89,19 +86,17 @@ if __name__ == "__main__":
     cooperative.simulate(
         len(hourly_data),
         p2p_base_price,
-        1,
         min_price,
         token_mint_rate,
         token_burn_rate,
         hourly_data,
         grid_costs,
-        profiles,
     )
 
     results_dir = Path("results")
     results_dir.mkdir(parents=True, exist_ok=True)
     now = datetime.now()
-    formatted_date = now.strftime("%Y-%m-%d_%H:%M:%S")
+    formatted_date = now.strftime("%Y-%m-%d_%H-%M-%S")
 
     # Save results to CSV files
     save_results_to_csv(cooperative, time_labels, results_dir, formatted_date)
