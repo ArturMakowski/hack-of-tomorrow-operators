@@ -178,3 +178,12 @@ dist
 pv_profiles/
 pv_profiles_1_days/
 pv_profiles_2_days/
+
+# Frontend
+!frontend/lib
+frontend/node_modules
+frontend/dist
+frontend/build
+frontend/coverage
+frontend/dist
+frontend/.next
