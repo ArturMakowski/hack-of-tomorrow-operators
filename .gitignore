@@ -175,3 +175,6 @@ dist
 *.env
 *cache*
 .DS_Store
+pv_profiles/
+pv_profiles_1_days/
+pv_profiles_2_days/

@@ -1,0 +1,4 @@
+fetchai==0.1.30
+numpy
+matplotlib
+random2
