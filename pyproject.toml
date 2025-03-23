@@ -1,0 +1,28 @@
+[project]
+name = "operatorzy"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Artur Makowski", email = "artmak1@st.amu.edu.pl" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "fetchai==0.1.30",
+    "langchain-core>=0.3.47",
+    "langchain-openai>=0.3.9",
+    "matplotlib>=3.10.1",
+    "numpy>=2.2.4",
+    "pandas>=2.2.3",
+    "python-dotenv>=1.0.1",
+    "random2>=1.0.2",
+    "scikit-learn>=1.6.1",
+    "uagents>=0.21.0",
+]
+
+[project.scripts]
+operatorzy = "operatorzy:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
