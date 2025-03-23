@@ -34,6 +34,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type AIDecision = {
   action: "BUY" | "SELL" | "STORE" | "HOLD";
@@ -52,6 +53,7 @@ export default function DecisionExplorer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const currentDecisionRef = useRef<HTMLButtonElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   const totalSteps = energyDecisionData.length;
   const currentData = energyDecisionData[currentStep];
@@ -217,8 +219,66 @@ export default function DecisionExplorer() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <Card className="lg:col-span-3 py-4">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-h-[900px]">
+      <div className="lg:hidden fixed top-2 left-2 right-2 z-50">
+        <Card className="shadow-lg">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handlePrevious}
+                disabled={currentStep === 0}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={handlePlayPause}>
+                {isPlaying ? (
+                  <div className="h-4 w-4 flex items-center justify-center gap-1">
+                    <div className="h-3 w-0.5 bg-current" />
+                    <div className="h-3 w-0.5 bg-current" />
+                  </div>
+                ) : currentStep === totalSteps - 1 ? (
+                  <RotateCcw className="h-4 w-4" />
+                ) : (
+                  <div className="h-4 w-4 flex items-center justify-center">
+                    <div className="w-0 h-0 border-t-[6px] border-t-transparent border-l-[10px] border-l-current border-b-[6px] border-b-transparent ml-0.5" />
+                  </div>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleNext}
+                disabled={currentStep === totalSteps - 1}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <div className="ml-auto font-medium flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                {getHourFromTimestamp(currentData.step)}
+              </div>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              {getDecisionIcon(currentData.ai_decision.action)}
+              <div>
+                <span className="text-orange-500">
+                  {currentData.ai_decision.action}
+                </span>
+                {currentData.ai_decision.amount > 0 && (
+                  <span className="ml-2 text-muted-foreground">
+                    ({formatEnergy(currentData.ai_decision.amount)})
+                  </span>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="lg:hidden h-[80px]" />
+
+      <Card className="lg:col-span-3 py-4 [display:none] lg:[display:block]">
         <CardContent className="flex flex-col px-4 gap-4">
           <div className="flex items-center gap-2">
             <Button
@@ -258,7 +318,10 @@ export default function DecisionExplorer() {
           </div>
 
           <div className="border rounded-lg">
-            <ScrollArea className="h-[500px] p-2" ref={scrollAreaRef}>
+            <ScrollArea
+              className="h-[150px] lg:h-[400px] p-2"
+              ref={scrollAreaRef}
+            >
               <div className="space-y-1 p-1">
                 {energyDecisionData.map((decision, index) => (
                   <Button
@@ -333,8 +396,8 @@ export default function DecisionExplorer() {
         </CardContent>
       </Card>
 
-      <Card className=" lg:col-span-9">
-        <CardHeader className="mb-2">
+      <Card className="lg:col-span-9 pt-4 lg:pt-0">
+        <CardHeader className="mb-2 hidden lg:block">
           <CardTitle className="flex items-center gap-3">
             {getDecisionIcon(currentData.ai_decision.action)}
             <div>
@@ -359,7 +422,7 @@ export default function DecisionExplorer() {
               : "Maintaining current energy balance"}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 px-4">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <MetricCard
               title="Energy Consumption"
@@ -422,55 +485,65 @@ export default function DecisionExplorer() {
           </div>
 
           <div>
-            <Card className="p-4">
-              <h2 className="text-lg font-medium mb-2">Token Balance</h2>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={energyDecisionData}
-                    margin={{
-                      top: 5,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="step"
-                      tickFormatter={(value) => value.split(" ")[1]}
-                      tick={{ fontSize: 12 }}
-                    />
-                    <YAxis
-                      tickFormatter={(value) => formatNumber(value)}
-                      tick={{ fontSize: 12 }}
-                      domain={getYAxisDomain()}
-                    />
-                    <Tooltip
-                      formatter={(value) => [
-                        formatNumber(Number(value)),
-                        "Token Balance",
-                      ]}
-                      labelFormatter={(label) => label.split(" ")[1]}
-                    />
-                    <Line
-                      // key={currentStep}
-                      type="monotone"
-                      dataKey="token_balance"
-                      stroke="#f97316"
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                      isAnimationActive={true}
-                      animationDuration={750}
-                      animationEasing="ease-in-out"
-                      data={energyDecisionData.map((item, index) => ({
-                        ...item,
-                        token_balance:
-                          index <= currentStep ? item.token_balance : null,
-                      }))}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+            <Card className="w-full">
+              <div className="p-4 lg:p-4">
+                <h2 className="text-lg font-medium mb-2 flex items-center gap-2">
+                  <Coins className="h-5 w-5 text-yellow-500" />
+                  Token Balance
+                </h2>
+              </div>
+              <div className="px-0 lg:px-4">
+                <div className="h-[250px] lg:h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%" debounce={1}>
+                    <LineChart
+                      data={energyDecisionData}
+                      margin={{
+                        top: 5,
+                        right: 10,
+                        left: isMobile ? -20 : 20,
+                        bottom: 5,
+                      }}
+                      width={500}
+                      height={300}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="step"
+                        tickFormatter={(value) => value.split(" ")[1]}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <YAxis
+                        tickFormatter={(value) => formatNumber(value)}
+                        tick={{ fontSize: 12 }}
+                        domain={getYAxisDomain()}
+                        dx={isMobile ? -10 : 0}
+                        width={isMobile ? 35 : 45}
+                      />
+                      <Tooltip
+                        formatter={(value) => [
+                          formatNumber(Number(value)),
+                          "Token Balance",
+                        ]}
+                        labelFormatter={(label) => label.split(" ")[1]}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="token_balance"
+                        stroke="#f97316"
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        isAnimationActive={true}
+                        animationDuration={750}
+                        animationEasing="ease-in-out"
+                        data={energyDecisionData.map((item, index) => ({
+                          ...item,
+                          token_balance:
+                            index <= currentStep ? item.token_balance : null,
+                        }))}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </Card>
           </div>
@@ -497,24 +570,26 @@ function MetricCard({
 }: MetricCardProps) {
   return (
     <div
-      className={`p-4 border rounded-lg ${
+      className={`p-4 border rounded-lg lg:h-[102px] ${
         highlighted ? "bg-yellow-50 border-yellow-200" : ""
       }`}
     >
-      <div className="text-sm text-muted-foreground">{title}</div>
-      <div className="flex items-center gap-2">
-        <div className="text-xl font-bold">{value}</div>
-        {change !== null && (
-          <div className="text-sm">
-            {change > 0 ? (
-              <span className="text-green-500">+{formatChange(change)}</span>
-            ) : change < 0 ? (
-              <span className="text-red-500">{formatChange(change)}</span>
-            ) : (
-              <span className="text-gray-500">No change</span>
-            )}
-          </div>
-        )}
+      <div className="flex flex-col gap-2">
+        <div className="text-xs text-muted-foreground">{title}</div>
+        <div className="flex flex-col gap-1">
+          <div className="text-base font-bold">{value}</div>
+          {change !== null && (
+            <div className="text-xs">
+              {change > 0 ? (
+                <span className="text-green-500">+{formatChange(change)}</span>
+              ) : change < 0 ? (
+                <span className="text-red-500">{formatChange(change)}</span>
+              ) : (
+                <span className="text-gray-500">No change</span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
