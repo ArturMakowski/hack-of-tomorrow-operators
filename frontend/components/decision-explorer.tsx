@@ -41,11 +41,6 @@ type AIDecision = {
   amount: number;
 };
 
-const STORAGE_CONFIG = [
-  { id: "S1", name: "Storage S1", maxCapacity: 20 },
-  { id: "S2", name: "Storage S2", maxCapacity: 10 },
-] as const;
-
 export default function DecisionExplorer() {
   const [currentStep, setCurrentStep] = useState(0);
   const [previousData, setPreviousData] = useState<EnergyDecision | null>(null);
@@ -109,7 +104,7 @@ export default function DecisionExplorer() {
           }
           return prev + 1;
         });
-      }, 500);
+      }, 400);
     } else if (currentStep >= totalSteps - 1) {
       setIsPlaying(false);
     }
@@ -201,7 +196,11 @@ export default function DecisionExplorer() {
     return new Date(b.step).getTime() - new Date(a.step).getTime();
   });
 
-  const getDecisionIcon = (action: string) => {
+  const getDecisionIcon = (action: string, amount: number) => {
+    if (amount === 0) {
+      return <Zap className="h-5 w-5 text-gray-400" />;
+    }
+
     switch (action) {
       case "BUY":
         return <TrendingDown className="h-5 w-5 text-red-500" />;
@@ -260,10 +259,15 @@ export default function DecisionExplorer() {
               </div>
             </div>
             <div className="mt-2 flex items-center gap-2">
-              {getDecisionIcon(currentData.ai_decision.action)}
+              {getDecisionIcon(
+                currentData.ai_decision.action,
+                currentData.ai_decision.amount
+              )}
               <div>
                 <span className="text-orange-500">
-                  {currentData.ai_decision.action}
+                  {currentData.ai_decision.amount === 0
+                    ? "DO NOTHING"
+                    : currentData.ai_decision.action}
                 </span>
                 {currentData.ai_decision.amount > 0 && (
                   <span className="ml-2 text-muted-foreground">
@@ -332,14 +336,20 @@ export default function DecisionExplorer() {
                     onClick={() => setCurrentStep(index)}
                   >
                     <div className="flex items-center gap-2">
-                      {getDecisionIcon(decision.ai_decision.action)}
+                      {getDecisionIcon(
+                        decision.ai_decision.action,
+                        decision.ai_decision.amount
+                      )}
                       <div>
                         <div className="font-medium">
                           {getHourFromTimestamp(decision.step)}
                         </div>
                         <div className="text-xs">
-                          {decision.ai_decision.action}{" "}
-                          {formatEnergy(decision.ai_decision.amount)}
+                          {decision.ai_decision.amount === 0
+                            ? "DO NOTHING"
+                            : decision.ai_decision.action}{" "}
+                          {decision.ai_decision.amount > 0 &&
+                            formatEnergy(decision.ai_decision.amount)}
                         </div>
                       </div>
                     </div>
@@ -368,28 +378,26 @@ export default function DecisionExplorer() {
             <div>
               <div className="text-sm text-muted-foreground mb-2">Storage</div>
               <div className="space-y-2">
-                {STORAGE_CONFIG.map((storage) => {
-                  return (
-                    <div key={storage.id}>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>{storage.name}</span>
-                        <span>
-                          {formatEnergy(
-                            currentData[`storage_${storage.id}_level`]
-                          )}
-                        </span>
-                      </div>
-                      <Progress
-                        value={
-                          (currentData[`storage_${storage.id}_level`] /
-                            storage.maxCapacity) *
-                          100
-                        }
-                        className="h-2"
-                      />
-                    </div>
-                  );
-                })}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span>Storage S1</span>
+                    <span>{formatEnergy(currentData.storage_S1_level)}</span>
+                  </div>
+                  <Progress
+                    value={(currentData.storage_S1_level / 10) * 100}
+                    className="h-2"
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span>Storage S2</span>
+                    <span>{formatEnergy(currentData.storage_S2_level)}</span>
+                  </div>
+                  <Progress
+                    value={(currentData.storage_S2_level / 20) * 100}
+                    className="h-2"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -399,11 +407,16 @@ export default function DecisionExplorer() {
       <Card className="lg:col-span-9 pt-4 lg:pt-0">
         <CardHeader className="mb-2 hidden lg:block">
           <CardTitle className="flex items-center gap-3">
-            {getDecisionIcon(currentData.ai_decision.action)}
+            {getDecisionIcon(
+              currentData.ai_decision.action,
+              currentData.ai_decision.amount
+            )}
             <div>
               <span className="mr-2">Agent Decision:</span>
               <span className="text-orange-500">
-                {currentData.ai_decision.action}
+                {currentData.ai_decision.amount === 0
+                  ? "DO NOTHING"
+                  : currentData.ai_decision.action}
               </span>
               {currentData.ai_decision.amount > 0 && (
                 <span className="ml-2 text-muted-foreground">
@@ -413,13 +426,17 @@ export default function DecisionExplorer() {
             </div>
           </CardTitle>
           <CardDescription>
-            {currentData.ai_decision.action === "BUY"
+            {currentData.ai_decision.amount === 0
+              ? "No action taken - maintaining current system state"
+              : currentData.ai_decision.action === "BUY"
               ? "Purchasing energy from the grid due to consumption needs"
               : currentData.ai_decision.action === "SELL"
               ? "Selling excess energy back to the grid"
               : currentData.ai_decision.action === "STORE"
               ? "Storing excess energy for later use"
-              : "Maintaining current energy balance"}
+              : currentData.ai_decision.action === "DISCHARGE"
+              ? "Discharging stored energy to meet consumption needs"
+              : ""}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 px-4">
@@ -507,11 +524,6 @@ export default function DecisionExplorer() {
                       height={300}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="step"
-                        tickFormatter={(value) => value.split(" ")[1]}
-                        tick={{ fontSize: 12 }}
-                      />
                       <YAxis
                         tickFormatter={(value) => formatNumber(value)}
                         tick={{ fontSize: 12 }}
@@ -524,7 +536,6 @@ export default function DecisionExplorer() {
                           formatNumber(Number(value)),
                           "Token Balance",
                         ]}
-                        labelFormatter={(label) => label.split(" ")[1]}
                       />
                       <Line
                         type="monotone"
